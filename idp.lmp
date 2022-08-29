@@ -1,0 +1,54 @@
+# Multiprotein complexes
+
+units       real
+dimension   3
+boundary    p p p
+atom_style  full
+
+bond_style  harmonic
+#pair_style  kh/cut/coul/debye 0.1 0.0 35.0
+pair_style  ljlambda 0.141 0.0 35.0
+dielectric  80.0
+
+read_data   idp.data
+
+# pairwise coefficients
+
+bond_coeff          1     9.600     3.81
+
+include parameters.dat
+
+special_bonds fene
+neighbor  3.5 multi
+neigh_modify  every 10 delay 0
+
+comm_style    tiled
+timestep      10.0
+
+#minimize        .01 .01 1000 10000
+#reset_timestep  0
+
+velocity      all create 300 49421
+fix           fxnve   all nve
+fix           fxlange all langevin 300 300 1000.0 327843
+#fix           fxnpt all npt temp 150.0 150.0 100.0 iso 1.0 1.0 10000.0
+#fix           fxbal   all balance 1000 1.1 rcb
+
+compute 1 all gyration
+
+thermo        1000
+thermo_style  custom step pe ke temp lx ly lz c_1
+thermo_modify flush yes
+
+fix	      9 all plumed plumedfile US.plumed outfile plumed.out
+
+dump           1 all custom 1000 alanine.lammpstrj id type x y z fx fy fz
+dump_modify    1 sort id
+#restart       100000 restart/restart.$t.tmp1 restart/restart.$t.tmp2
+run             200000000
+
+#fix             fxnpt all npt temp 150.0 150.0 100.0 x 1.0 1.0 1000.0 y 1.0 1.0 1000.0 couple xy
+#fix             fxbal all balance 1000 1.1 rcb
+#run             13500
+
+write_data      LAF-1_RGG_out.data nocoeff
